@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[32,)"
+# issueTrackerURL=""
+# If the mods defined in this file should show as seperate resource packs
+showAsResourcePack=false
+
+displayURL=""
+authors="Ishax"
+
+[[mods]]
+modId="main"
+version="1.0.0.0"
+displayName="Ish Rails"
+description='''
+Allows the player to place rails diagonally.
+'''
+
+# [[dependencies.examplemod]] ((EOL))
+# modId="forge" ((EOL))
+# mandatory=true ((EOL))
+# versionRange="[28,)" ((EOL))
+# ordering="NONE" ((EOL))
+# side="BOTH" ((EOL))
+
