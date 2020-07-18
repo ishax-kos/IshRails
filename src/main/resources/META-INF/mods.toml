@@ -1,16 +1,18 @@
 modLoader="javafml"
 loaderVersion="[32,)"
-# issueTrackerURL=""
+issueTrackerURL="https://github.com/ishax-kos/IshRails/issues"
+
 # If the mods defined in this file should show as seperate resource packs
-showAsResourcePack=false
+# showAsResourcePack=false
 
 displayURL=""
 authors="Ishax"
 
 [[mods]]
-modId="main"
-version="1.0.0.0"
+modId="ishrails"
+version="${file.jarVersion}"
 displayName="Ish Rails"
+logoFile="pack.png"
 description='''
 Allows the player to place rails diagonally.
 '''

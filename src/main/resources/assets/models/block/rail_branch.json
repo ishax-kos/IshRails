@@ -1,0 +1,15 @@
+{
+    "parent": "block/rail_flat",
+    "textures": {
+        "rail": "block/rail_branch"
+    },
+	"elements": [
+        {   "from": [ -8, 1, -8 ],
+            "to": [ 24, 1, 24 ],
+            "faces": {
+                "down":  { "uv": [ 0, 16, 16,  0 ], "texture": "#rail" },
+                "up":    { "uv": [ 0,  0, 16, 16 ], "texture": "#rail" }
+            }
+        }
+    ]
+}
