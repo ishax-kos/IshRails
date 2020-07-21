@@ -1,9 +1,14 @@
 package com.ish.ishrails.blocks;
 
+import com.google.common.eventbus.Subscribe;
 import com.ish.ishrails.state.properties.IshRailShape;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.SoundType;
+import net.minecraft.block.material.Material;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.Property;
 import net.minecraft.state.StateContainer;
@@ -13,14 +18,24 @@ import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.client.model.obj.MaterialLibrary;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+
+import static net.minecraft.client.renderer.RenderTypeLookup.setRenderLayer;
 
 public class IshRailBlock extends AbstractIshRailBlock {
     public static final EnumProperty<IshRailShape> SHAPE = EnumProperty.create("shape", IshRailShape.class);
 
-    public IshRailBlock(AbstractBlock.Properties builder) {
-        super(false, builder);
+    public IshRailBlock() {
+        super(false, AbstractBlock.Properties
+                .create(Material.MISCELLANEOUS)
+                .doesNotBlockMovement()
+                .hardnessAndResistance(0.7F)
+                .sound(SoundType.METAL));
         this.setDefaultState(this.stateContainer.getBaseState().with(SHAPE, IshRailShape.NORTH_SOUTH));
     }
+
 
     protected void updateState(BlockState state, World worldIn, BlockPos pos, Block blockIn) {
         if (blockIn.getDefaultState().canProvidePower() && (new IshRailState(worldIn, pos, state)).countAdjacentRails() == 3) {
@@ -28,6 +43,7 @@ public class IshRailBlock extends AbstractIshRailBlock {
         }
 
     }
+
 
     public Property<IshRailShape> getShapeProperty() {
         return SHAPE;

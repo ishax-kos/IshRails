@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:block/rail_flat",
+  "textures": {
+    "rail": "ishrails:block/rail_curved_r"
+  },
+	"elements": [
+        {   "from": [ -4, 1, -4 ],
+            "to": [ 20, 1, 20 ],
+            "faces": {
+                "down":  { "uv": [ 0, 16, 16,  0 ], "texture": "#rail" },
+                "up":    { "uv": [ 0,  0, 16, 16 ], "texture": "#rail" }
+            }
+        }
+    ]
+}

@@ -23,7 +23,10 @@ public enum IshRailShape implements IStringSerializable {
     WEST_SE ("west_se" ),
     WEST_NE ("west_ne" ),
     EAST_SW ("east_sw" ),
-    EAST_NW ("east_nw" );
+    EAST_NW ("east_nw" ),
+
+    CROSSING ("xing" ),
+    CROSSING_DIAGONAL ("xing_diag" );
 
     private final String name;
 
@@ -38,6 +41,10 @@ public enum IshRailShape implements IStringSerializable {
 
     public boolean isAscending() {
         return this == ASCENDING_NORTH || this == ASCENDING_EAST || this == ASCENDING_SOUTH || this == ASCENDING_WEST;
+    }
+
+    public boolean isDiagonal() {
+        return this == NE_SW || this == NW_SE;
     }
 
     public String func_176610_l() {
