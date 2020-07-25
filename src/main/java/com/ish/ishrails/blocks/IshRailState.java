@@ -122,13 +122,13 @@ public class IshRailState {
 //    }
 
     private boolean pointsAt(BlockPos fromPos, BlockPos toPos, IshRailShape shape) {
-        log.debug(fromPos.north().getX());
-        log.debug(fromPos.north().getY());
-        log.debug(fromPos.north().getZ());
-        log.debug(toPos.equals(fromPos.north()));
-        log.debug(toPos.getX());
-        log.debug(toPos.getY());
-        log.debug(toPos.getZ());
+//        log.debug(fromPos.north().getX());
+//        log.debug(fromPos.north().getY());
+//        log.debug(fromPos.north().getZ());
+//        log.debug(toPos.equals(fromPos.north()));
+//        log.debug(toPos.getX());
+//        log.debug(toPos.getY());
+//        log.debug(toPos.getZ());
         switch(shape) {
             case NORTH_SOUTH:       return (toPos.equals(fromPos.north())        || toPos.equals(fromPos.south()));
             case EAST_WEST:         return (toPos.equals(fromPos.west())         || toPos.equals(fromPos.east()));
@@ -223,32 +223,6 @@ public IshRailState correctShape(boolean isPowered, boolean justPlaced, IshRailS
         boolean flagW  = this.pointsAtMe(blockposW);
         boolean flagNW = this.pointsAtMe(blockposNW);
         IshRailShape railshape = null;
-        boolean flagN_S = flagN || flagS;
-        boolean flagE_W = flagW || flagE;
-        boolean flagNE_SW = flagNW || flagSE;
-        boolean flagNW_SE = flagNE || flagSW;
-
-//        if (!shape.isAscending()) {
-//            if (flagN_S && !flagE_W && !flagNE_SW && !flagNW_SE) {
-//                railshape = IshRailShape.NORTH_SOUTH;
-//            }
-//
-//            if (flagE_W && !flagN_S && !flagNE_SW && !flagNW_SE) {
-//                railshape = IshRailShape.EAST_WEST;
-//            }
-//
-//            if (flagNE_SW && !flagN_S && !flagE_W && !flagNW_SE) {
-//                railshape = IshRailShape.NE_SW;
-//            }
-//
-//            if (flagNW_SE && !flagN_S && !flagE_W && !flagNE_SW) {
-//                railshape = IshRailShape.NW_SE;
-//            }
-//        }
-//        boolean[] debug0 = {flagN,flagNE,flagE, flagSE, flagS, flagSW, flagW, flagNW};
-//        for (boolean v: debug0) {
-//            log.debug(v);
-//        }
 
         if (true && !shape.isAscending()) { //!this.disableCorners
             if (flagS && !flagN) {
@@ -288,25 +262,6 @@ public IshRailState correctShape(boolean isPowered, boolean justPlaced, IshRailS
                 }
             }
         }
-
-        //
-//        if (flagN) {
-//            railshape = IshRailShape.NORTH_SE;
-//        }if (flagNE) {
-//            railshape = IshRailShape.SOUTH_NE;
-//        }if (flagE) {
-//            railshape = IshRailShape.EAST_SW;
-//        }if (flagSE) {
-//            railshape = IshRailShape.WEST_SE;
-//        }if (flagS) {
-//            railshape = IshRailShape.SOUTH_NW;
-//        }if (flagSW) {
-//            railshape = IshRailShape.NORTH_SW;
-//        }if (flagW) {
-//            railshape = IshRailShape.WEST_NE;
-//        }if (flagNW) {
-//            railshape = IshRailShape.EAST_NW;
-//        }
 
         if (railshape == null) {
             railshape = shape;
