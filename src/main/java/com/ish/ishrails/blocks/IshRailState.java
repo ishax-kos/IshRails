@@ -22,6 +22,7 @@ public class IshRailState {
     private final AbstractIshRailBlock block;
     private BlockState newState;
     private final boolean disableCorners;
+//    private final IshRailShape shape;
 //    private final List<BlockPos> connectedRails = Lists.newArrayList();
     private final boolean canMakeSlopes;
 
@@ -30,20 +31,20 @@ public class IshRailState {
         this.pos = pos;
         this.newState = state;
         this.block = (AbstractIshRailBlock) state.getBlock();
-        IshRailShape ishrailshape = this.block.getRailDirection(newState, worldIn, pos, null);
+        IshRailShape railShape = this.block.getRailDirection(newState, worldIn, pos, null);
         this.disableCorners = !this.block.isFlexibleRail(newState, worldIn, pos);
         this.canMakeSlopes = this.block.canMakeSlopes(newState, worldIn, pos);
 //        this.reset(ishrailshape);
     }
 
-//    public IshRailShape getShape(BlockPos pos) {
-//        return this.block.getRailDirection(newState, world, pos, null);
-//    }
+    public IshRailShape getShape() {
+        return this.block.getRailDirection(this.newState, this.world, pos, null);
+    }
 
 //    public List<BlockPos> getConnectedRails() { return this.connectedRails;
 //    }
 //
-//    private void reset(IshRailShape shape) {
+//    private void refreshRail() {
 //        this.connectedRails.clear();
 //        switch(shape) {
 //            case NORTH_SOUTH:
@@ -120,6 +121,7 @@ public class IshRailState {
 //        IshRailShape shape = state.newState.get(state.block.getShapeProperty());
 //        return pointsAt(fromPos, toPos, shape);
 //    }
+    private boolean pointsAt(BlockPos toPos) {return pointsAt(this.pos, toPos, this.getShape());}
 
     private boolean pointsAt(BlockPos fromPos, BlockPos toPos, IshRailShape shape) {
 //        log.debug(fromPos.north().getX());
@@ -138,14 +140,14 @@ public class IshRailState {
             case ASCENDING_WEST:    return (toPos.equals(fromPos.west().up())    || toPos.equals(fromPos.east()));
             case ASCENDING_NORTH:   return (toPos.equals(fromPos.north().up())   || toPos.equals(fromPos.south()));
             case ASCENDING_SOUTH:   return (toPos.equals(fromPos.north())        || toPos.equals(fromPos.south().up()));
-            case SOUTH_NE:          return (toPos.equals(fromPos.north().east()) || toPos.equals(fromPos.south()));
-            case SOUTH_NW:          return (toPos.equals(fromPos.north().west()) || toPos.equals(fromPos.south()));
-            case NORTH_SW:          return (toPos.equals(fromPos.south().west()) || toPos.equals(fromPos.north()));
-            case NORTH_SE:          return (toPos.equals(fromPos.south().east()) || toPos.equals(fromPos.north()));
-            case WEST_NE:           return (toPos.equals(fromPos.north().east()) || toPos.equals(fromPos.west()));
-            case WEST_SE:           return (toPos.equals(fromPos.south().east()) || toPos.equals(fromPos.west()));
-            case EAST_NW:           return (toPos.equals(fromPos.north().west()) || toPos.equals(fromPos.east()));
-            case EAST_SW:           return (toPos.equals(fromPos.south().west()) || toPos.equals(fromPos.east()));
+            case NORTH_SW :          return (toPos.equals(fromPos.north().east()) || toPos.equals(fromPos.south()));
+            case NORTH_SE:          return (toPos.equals(fromPos.north().west()) || toPos.equals(fromPos.south()));
+            case SOUTH_NE:          return (toPos.equals(fromPos.south().west()) || toPos.equals(fromPos.north()));
+            case SOUTH_NW:          return (toPos.equals(fromPos.south().east()) || toPos.equals(fromPos.north()));
+            case EAST_SW:           return (toPos.equals(fromPos.north().east()) || toPos.equals(fromPos.west()));
+            case EAST_NW:           return (toPos.equals(fromPos.south().east()) || toPos.equals(fromPos.west()));
+            case WEST_SE:           return (toPos.equals(fromPos.north().west()) || toPos.equals(fromPos.east()));
+            case WEST_NE:           return (toPos.equals(fromPos.south().west()) || toPos.equals(fromPos.east()));
             default: return false;
         }
     }
@@ -160,23 +162,20 @@ public class IshRailState {
         BlockState blockstate = this.world.getBlockState(blockPos);
         if (AbstractIshRailBlock.isRail(blockstate)) { return new IshRailState(this.world, blockPos, blockstate);
         } else {
-
-            BlockPos pos2 = blockPos.up();
+//            BlockPos pos2 = blockPos.up();
+//            blockstate = this.world.getBlockState(pos2);
+//            if (AbstractIshRailBlock.isRail(blockstate)) { return new IshRailState(this.world, pos2, blockstate);
+//            } else { }
+            BlockPos pos2 = blockPos.down();
             blockstate = this.world.getBlockState(pos2);
-            if (AbstractIshRailBlock.isRail(blockstate)) { return new IshRailState(this.world, pos2, blockstate);
-            } else {
-                pos2 = blockPos.down();
-                blockstate = this.world.getBlockState(pos2);
-                if (AbstractIshRailBlock.isRail(blockstate)) {
+            if (AbstractIshRailBlock.isRail(blockstate)) {
 
-                    return new IshRailState(this.world, pos2, blockstate);
-                }
-//                log.debug("failed");
-                return null;
+                return new IshRailState(this.world, pos2, blockstate);
             }
+//                log.debug("failed");
+            return null;
         }
     }
-
 
 
     protected int countAdjacentRails() {
@@ -191,21 +190,77 @@ public class IshRailState {
 
     private boolean pointsAtMe(BlockPos blockPos) {
         IshRailState state = this.createForAdjacent(blockPos);
-        log.debug(state);
+//        log.debug(state);
         if (state == null) {
             return false;
         } else {
             IshRailShape railDirection = state.block.getRailDirection(state.newState, this.world, blockPos, null);
             boolean result = pointsAt(this.pos, blockPos, railDirection);
-            log.debug(result);
+//            log.debug(result);
             return result;
         }
     }
 
-//    public RailState func_226941_a_(boolean p_226941_1_, boolean p_226941_2_, RailShape p_226941_3_) {
-//
+    private List<BlockPos> getActualConnections() {
+        List<BlockPos> connects = Lists.newArrayList();
+        for (BlockPos p: this.getOutlets(this.pos,this.getShape())) {
+            if (createForAdjacent(p).pointsAt(this.pos)) {
+                connects.add(p);
+            }
+        }
+        return connects;
+    }
+
+
+    public List<BlockPos> getOpenConnections() {
+        List<BlockPos> connects = Lists.newArrayList();
+        for (BlockPos p: this.getOutlets()) {
+            IshRailState s = createForAdjacent(p);
+            if (s == null || !createForAdjacent(p).pointsAt(this.pos)) {
+                connects.add(p);
+            }
+        }
+        return connects;
+    }
+
+
+//    List<BlockPos> getOpenConnections(IshRailState state) {
+//        List<BlockPos> connects = Lists.newArrayList();
+//        for (BlockPos p: state.getOutlets()) {
+//            if (!this.pointsAt(p)) {
+//                connects.add(p);
+//            }
+//        }
+//        return connects;
 //    }
-public IshRailState correctShape(boolean isPowered, boolean justPlaced, IshRailShape shape) {
+
+
+    public BlockPos[] getOutlets() {return getOutlets(this.pos, this.getShape());}
+    public BlockPos[] getOutlets(BlockPos fromPos, IshRailShape shape) {
+        switch(shape) {
+            case NORTH_SOUTH:       return new BlockPos[]{fromPos.south()        , fromPos.north()};
+            case EAST_WEST:         return new BlockPos[]{fromPos.east()         , fromPos.west()};
+            case NW_SE:             return new BlockPos[]{fromPos.south().east() , fromPos.north().west()};
+            case NE_SW:             return new BlockPos[]{fromPos.south().west() , fromPos.north().east()};
+            case ASCENDING_EAST:    return new BlockPos[]{fromPos.east()         , fromPos.west().up()};
+            case ASCENDING_WEST:    return new BlockPos[]{fromPos.east().up()    , fromPos.west()};
+            case ASCENDING_NORTH:   return new BlockPos[]{fromPos.south().up()   , fromPos.north()};
+            case ASCENDING_SOUTH:   return new BlockPos[]{fromPos.south()        , fromPos.north().up()};
+            case NORTH_SW:          return new BlockPos[]{fromPos.south().west() , fromPos.north()};
+            case NORTH_SE:          return new BlockPos[]{fromPos.south().east() , fromPos.north()};
+            case SOUTH_NE:          return new BlockPos[]{fromPos.north().east() , fromPos.south()};
+            case SOUTH_NW:          return new BlockPos[]{fromPos.north().west() , fromPos.south()};
+            case EAST_SW:           return new BlockPos[]{fromPos.south().west() , fromPos.east()};
+            case EAST_NW:           return new BlockPos[]{fromPos.north().west() , fromPos.east()};
+            case WEST_SE:           return new BlockPos[]{fromPos.south().east() , fromPos.west()};
+            case WEST_NE:           return new BlockPos[]{fromPos.north().east() , fromPos.west()};
+            default: return new BlockPos[]{};
+        }
+    }
+
+
+public IshRailState correctShape(boolean isPowered, boolean justPlaced) {
+        IshRailShape shape = this.getShape();
         BlockPos blockposN  = this.pos.north();
         BlockPos blockposNE = this.pos.north().east();
         BlockPos blockposE  = this.pos.east();
@@ -224,44 +279,83 @@ public IshRailState correctShape(boolean isPowered, boolean justPlaced, IshRailS
         boolean flagNW = this.pointsAtMe(blockposNW);
         IshRailShape railshape = null;
 
-        if (true && !shape.isAscending()) { //!this.disableCorners
-            if (flagS && !flagN) {
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.SOUTH_NE;
-                }
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.SOUTH_NW;
-                }
+
+    if (!this.disableCorners && !shape.isAscending()) { //
+        if (flagS && !flagN) {
+            if (shape == IshRailShape.NE_SW) {
+                railshape = IshRailShape.SOUTH_NE;
             }
-
-            if (flagN && !flagS) {
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.NORTH_SE;
-                }
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.NORTH_SW;
-                }
-            }
-
-
-            if (flagE && !flagW) {
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.EAST_NW;
-                }
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.EAST_SW;
-                }
-            }
-
-            if (flagW && !flagE) {
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.WEST_NE;
-                }
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.WEST_SE;
-                }
+            if (shape == IshRailShape.NW_SE) {
+                railshape = IshRailShape.SOUTH_NW;
             }
         }
+
+        if (flagN && !flagS) {
+            if (shape == IshRailShape.NW_SE) {
+                railshape = IshRailShape.NORTH_SE;
+            }
+            if (shape == IshRailShape.NE_SW) {
+                railshape = IshRailShape.NORTH_SW;
+            }
+        }
+
+
+        if (flagE && !flagW) {
+            if (shape == IshRailShape.NW_SE) {
+                railshape = IshRailShape.EAST_NW;
+            }
+            if (shape == IshRailShape.NE_SW) {
+                railshape = IshRailShape.EAST_SW;
+            }
+        }
+
+        if (flagW && !flagE) {
+            if (shape == IshRailShape.NE_SW) {
+                railshape = IshRailShape.WEST_NE;
+            }
+            if (shape == IshRailShape.NW_SE) {
+                railshape = IshRailShape.WEST_SE;
+            }
+        }
+
+
+        if (flagSE && !flagNW) {
+            if (shape == IshRailShape.NORTH_SOUTH) {
+                railshape = IshRailShape.NORTH_SE;
+            }
+            if (shape == IshRailShape.EAST_WEST) {
+                railshape = IshRailShape.WEST_SE;
+            }
+        }
+
+        if (flagNW && !flagSE) {
+            if (shape == IshRailShape.NORTH_SOUTH) {
+                railshape = IshRailShape.SOUTH_NW;
+            }
+            if (shape == IshRailShape.EAST_WEST) {
+                railshape = IshRailShape.EAST_NW;
+            }
+        }
+
+
+        if (flagNE && !flagSW) {
+            if (shape == IshRailShape.NORTH_SOUTH) {
+                railshape = IshRailShape.SOUTH_NE;
+            }
+            if (shape == IshRailShape.EAST_WEST) {
+                railshape = IshRailShape.WEST_NE;
+            }
+        }
+
+        if (flagSW && !flagNE) {
+            if (shape == IshRailShape.NORTH_SOUTH) {
+                railshape = IshRailShape.NORTH_SW;
+            }
+            if (shape == IshRailShape.EAST_WEST) {
+                railshape = IshRailShape.EAST_SW;
+            }
+        }
+    }
 
         if (railshape == null) {
             railshape = shape;
@@ -270,18 +364,99 @@ public IshRailState correctShape(boolean isPowered, boolean justPlaced, IshRailS
         this.newState = this.newState.with(this.block.getShapeProperty(), railshape);
         if (justPlaced || this.world.getBlockState(this.pos) != this.newState) {
             this.world.setBlockState(this.pos, this.newState, 3);
-//
-//            for(int i = 0; i < this.connectedRails.size(); ++i) {
-//                IshRailState railstate = this.createForAdjacent(this.connectedRails.get(i));
-//                if (railstate != null) {
-//                    railstate.checkConnected();
-//                    if (railstate.canConnectTo(this)) {
-//                        railstate.correctShapeNeighbor(this, shape);
-//                    }
-//                }
-//            }
-        } return this;
+
+            log.debug("1");
+            BlockPos[] outlets = getOutlets(this.pos, railshape);
+            for(BlockPos i: outlets) {
+                log.debug("2");
+                IshRailState railstate = createForAdjacent(i);
+                log.debug(i);
+                if (railstate != null) {
+                    log.debug("3");
+                    List<BlockPos> openConn = railstate.getOpenConnections();
+                    for(BlockPos p: openConn) {log.debug(p.toString());}
+                    if (openConn.size() != 0) {
+                        log.debug("found open");
+                        railstate.correctAdjacentShape(this);
+                    }
+                }
+            }
+        }
+    log.debug("");
+    return this;
     }
+
+
+    public void correctAdjacentShape(IshRailState centralState) {
+        IshRailShape railshape = null;
+        if (!this.getShape().isAscending()) {
+            if (this.pos.equals(centralState.pos.south())) {
+                if (this.getShape() == IshRailShape.NW_SE) {
+                    railshape = IshRailShape.NORTH_SE;
+                }
+                if (this.getShape() == IshRailShape.NE_SW) {
+                    railshape = IshRailShape.NORTH_SW;
+                }
+            } else if (this.pos.equals(centralState.pos.south().west())) {
+                if (this.getShape() == IshRailShape.NORTH_SOUTH) {
+                    railshape = IshRailShape.SOUTH_NE;
+                }
+                if (this.getShape() == IshRailShape.EAST_WEST) {
+                    railshape = IshRailShape.WEST_NE;
+                }
+            } else if (this.pos.equals(centralState.pos.west())) {
+                if (this.getShape() == IshRailShape.NW_SE) {
+                    railshape = IshRailShape.EAST_NW;
+                }
+                if (this.getShape() == IshRailShape.NE_SW) {
+                    railshape = IshRailShape.EAST_SW;
+                }
+            } else if (this.pos.equals(centralState.pos.north().west())) {
+                if (this.getShape() == IshRailShape.NORTH_SOUTH) {
+                    railshape = IshRailShape.NORTH_SE;
+                }
+                if (this.getShape() == IshRailShape.EAST_WEST) {
+                    railshape = IshRailShape.WEST_SE;
+                }
+            } else if (this.pos.equals(centralState.pos.north())) {
+                if (this.getShape() == IshRailShape.NE_SW) {
+                    railshape = IshRailShape.SOUTH_NE;
+                }
+                if (this.getShape() == IshRailShape.NW_SE) {
+                    railshape = IshRailShape.SOUTH_NW;
+                }
+            } else if (this.pos.equals(centralState.pos.north().east())) {
+                if (this.getShape() == IshRailShape.NORTH_SOUTH) {
+                    railshape = IshRailShape.NORTH_SW;
+                }
+                if (this.getShape() == IshRailShape.EAST_WEST) {
+                    railshape = IshRailShape.EAST_SW;
+                }
+            } else if (this.pos.equals(centralState.pos.east())) {
+                if (this.getShape() == IshRailShape.NE_SW) {
+                    railshape = IshRailShape.WEST_NE;
+                }
+                if (this.getShape() == IshRailShape.NW_SE) {
+                    railshape = IshRailShape.WEST_SE;
+                }
+            } else if (this.pos.equals(centralState.pos.south().east())) {
+                if (this.getShape() == IshRailShape.NORTH_SOUTH) {
+                    railshape = IshRailShape.SOUTH_NW;
+                }
+                if (this.getShape() == IshRailShape.EAST_WEST) {
+                    railshape = IshRailShape.EAST_NW;
+                }
+            }
+        }
+
+        if (railshape == null) {
+            railshape = this.getShape();
+        }
+
+        this.newState = this.newState.with(this.block.getShapeProperty(), railshape);
+        this.world.setBlockState(this.pos, this.newState, 3);
+    }
+
 
     public BlockState getNewState() { return this.newState;
     }

@@ -52,7 +52,7 @@ public abstract class AbstractIshRailBlock extends Block implements IAbstractIsh
 
     public void onBlockAdded(BlockState state, World worldIn, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (!oldState.isIn(state.getBlock())) {
-            log.debug("peep");
+//            log.debug("peep");
             this.func_235327_a_(state, worldIn, pos, isMoving);
         }
     }
@@ -111,8 +111,8 @@ public abstract class AbstractIshRailBlock extends Block implements IAbstractIsh
         if (worldIn.isRemote) {
             return state;
         } else {
-            IshRailShape shape = state.get(this.getShapeProperty());
-            return (new IshRailState(worldIn, pos, state)).correctShape(worldIn.isBlockPowered(pos), placing, shape).getNewState();
+//            IshRailShape shape = state.get(this.getShapeProperty());
+            return (new IshRailState(worldIn, pos, state)).correctShape(worldIn.isBlockPowered(pos), placing).getNewState();
         }
     }
 
