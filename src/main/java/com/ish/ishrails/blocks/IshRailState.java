@@ -1,9 +1,11 @@
 package com.ish.ishrails.blocks;
 
 import com.google.common.collect.Lists;
+
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import javax.annotation.Nullable;
-
 import com.ish.ishrails.state.properties.IshRailShape;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.RailBlock;
@@ -15,6 +17,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import static com.ish.ishrails.IshRails.log;
+import static java.lang.Math.abs;
 
 public class IshRailState {
     private final World world;
@@ -22,7 +25,7 @@ public class IshRailState {
     private final AbstractIshRailBlock block;
     private BlockState newState;
     private final boolean disableCorners;
-//    private final IshRailShape shape;
+    private final IshRailShape shape;
 //    private final List<BlockPos> connectedRails = Lists.newArrayList();
     private final boolean canMakeSlopes;
 
@@ -31,7 +34,7 @@ public class IshRailState {
         this.pos = pos;
         this.newState = state;
         this.block = (AbstractIshRailBlock) state.getBlock();
-        IshRailShape railShape = this.block.getRailDirection(newState, worldIn, pos, null);
+        this.shape = this.block.getRailDirection(newState, worldIn, pos, null);
         this.disableCorners = !this.block.isFlexibleRail(newState, worldIn, pos);
         this.canMakeSlopes = this.block.canMakeSlopes(newState, worldIn, pos);
 //        this.reset(ishrailshape);
@@ -164,8 +167,9 @@ public class IshRailState {
 //            } else { }
             BlockPos pos2 = blockPos.down();
             blockstate = this.world.getBlockState(pos2);
-            if (AbstractIshRailBlock.isRail(blockstate)) {
-
+            if (AbstractIshRailBlock.isRail(blockstate)
+            && this.block.getRailDirection(blockstate, this.world, pos2, null).isAscending()) {
+                ;
                 return new IshRailState(this.world, pos2, blockstate);
             }
 //                log.debug("failed");
@@ -196,28 +200,61 @@ public class IshRailState {
             return result;
         }
     }
-
-    private List<BlockPos> getActualConnections() {
-        List<BlockPos> connects = Lists.newArrayList();
-        for (BlockPos p: this.getOutlets()) {
+    
+    private HashSet<Dir> getOutletDirections() {
+        Dir[] list = null;
+        switch(this.shape) {
+            case NORTH_SOUTH:case ASCENDING_NORTH:case ASCENDING_SOUTH:  list = new Dir[]{Dir.N, Dir.S}; break;
+            case EAST_WEST:  case ASCENDING_EAST: case ASCENDING_WEST:   list = new Dir[]{Dir.E, Dir.W}; break;
+            case NW_SE:             list = new Dir[]{Dir.SE , Dir.NW}; break;
+            case NE_SW:             list = new Dir[]{Dir.SW , Dir.NE}; break;
+            case NORTH_SW:          list = new Dir[]{Dir.SW , Dir.N}; break;
+            case NORTH_SE:          list = new Dir[]{Dir.SE , Dir.N}; break;
+            case SOUTH_NE:          list = new Dir[]{Dir.NE , Dir.S}; break;
+            case SOUTH_NW:          list = new Dir[]{Dir.NW , Dir.S}; break;
+            case EAST_SW:           list = new Dir[]{Dir.SW , Dir.E}; break;
+            case EAST_NW:           list = new Dir[]{Dir.NW , Dir.E}; break;
+            case WEST_SE:           list = new Dir[]{Dir.SE , Dir.W}; break;
+            case WEST_NE:           list = new Dir[]{Dir.NE , Dir.W}; break;
+            default: list = new Dir[]{}; break;
+        }
+//        log.debug(this.shape);
+//        log.debug("A");
+//        for (Dir i: list) {log.debug(i.index);};
+//        log.debug("B");
+        return new HashSet<Dir>(Arrays.asList(list));
+    }
+        
+    private HashSet<Dir> getActualConnections() {
+        HashSet<Dir> connects = new HashSet<Dir>();
+        BlockPos p;
+        for (Dir d: this.getOutletDirections()) {
+//            log.debug(1);/
+            p = d.fromPos(this.pos);
+//            log.debug(2);
             IshRailState s = createForAdjacent(p);
-            if (s != null && createForAdjacent(p).pointsAt(this.pos)) {
-                connects.add(p);
+//            log.debug(3);
+            if (s != null && s.pointsAt(this.pos)) {
+//                log.debug(4);
+                connects.add(d);
+//                log.debug(5);
+//                log.debug(d);
+//                log.debug(p);
             }
         }
         return connects;
     }
 
-    private List<BlockPos> getActualConnections(BlockPos pos, IshRailShape shape) {
-        List<BlockPos> connects = Lists.newArrayList();
-        for (BlockPos p: getOutlets(pos, shape)) {
-            IshRailState s = createForAdjacent(p);
-            if (s != null && createForAdjacent(p).pointsAt(pos)) {
-                connects.add(p);
-            }
-        }
-        return connects;
-    }
+//    private List<BlockPos> getActualConnections(BlockPos pos, IshRailShape shape) {
+//        List<BlockPos> connects = Lists.newArrayList();
+//        for (BlockPos p: getOutlets(pos, shape)) {
+//            IshRailState s = createForAdjacent(p);
+//            if (s != null && createForAdjacent(p).pointsAt(pos)) {
+//                connects.add(p);
+//            }
+//        }
+//        return connects;
+//    }
 
 
     public List<BlockPos> getOpenConnections() {
@@ -231,6 +268,14 @@ public class IshRailState {
         return connects;
     }
 
+    public Dir directionTo(IshRailState other) {
+        for (Dir i: Dir.values()) {
+            if (i.fromPos(this.pos).equals(other.pos)) {
+                return i;
+            }
+        }
+        return null;
+    }
 
 //    List<BlockPos> getOpenConnections(IshRailState state) {
 //        List<BlockPos> connects = Lists.newArrayList();
@@ -289,82 +334,6 @@ public class IshRailState {
             boolean flagNW = this.pointsAtMe(blockposNW);
 
 
-            if (!this.disableCorners) { //
-                if (flagS && !flagN) {
-                    if (shape == IshRailShape.NE_SW) {
-                        railshape = IshRailShape.SOUTH_NE;
-                    }
-                    if (shape == IshRailShape.NW_SE) {
-                        railshape = IshRailShape.SOUTH_NW;
-                    }
-                }
-
-                if (flagN && !flagS) {
-                    if (shape == IshRailShape.NW_SE) {
-                        railshape = IshRailShape.NORTH_SE;
-                    }
-                    if (shape == IshRailShape.NE_SW) {
-                        railshape = IshRailShape.NORTH_SW;
-                    }
-                }
-
-
-                if (flagE && !flagW) {
-                    if (shape == IshRailShape.NW_SE) {
-                        railshape = IshRailShape.EAST_NW;
-                    }
-                    if (shape == IshRailShape.NE_SW) {
-                        railshape = IshRailShape.EAST_SW;
-                    }
-                }
-
-                if (flagW && !flagE) {
-                    if (shape == IshRailShape.NE_SW) {
-                        railshape = IshRailShape.WEST_NE;
-                    }
-                    if (shape == IshRailShape.NW_SE) {
-                        railshape = IshRailShape.WEST_SE;
-                    }
-                }
-
-
-                if (flagSE && !flagNW) {
-                    if (shape == IshRailShape.NORTH_SOUTH) {
-                        railshape = IshRailShape.NORTH_SE;
-                    }
-                    if (shape == IshRailShape.EAST_WEST) {
-                        railshape = IshRailShape.WEST_SE;
-                    }
-                }
-
-                if (flagNW && !flagSE) {
-                    if (shape == IshRailShape.NORTH_SOUTH) {
-                        railshape = IshRailShape.SOUTH_NW;
-                    }
-                    if (shape == IshRailShape.EAST_WEST) {
-                        railshape = IshRailShape.EAST_NW;
-                    }
-                }
-
-
-                if (flagNE && !flagSW) {
-                    if (shape == IshRailShape.NORTH_SOUTH) {
-                        railshape = IshRailShape.SOUTH_NE;
-                    }
-                    if (shape == IshRailShape.EAST_WEST) {
-                        railshape = IshRailShape.WEST_NE;
-                    }
-                }
-
-                if (flagSW && !flagNE) {
-                    if (shape == IshRailShape.NORTH_SOUTH) {
-                        railshape = IshRailShape.NORTH_SW;
-                    }
-                    if (shape == IshRailShape.EAST_WEST) {
-                        railshape = IshRailShape.EAST_SW;
-                    }
-                }
-            }
 
             if (flagN && flagS && shape == IshRailShape.NORTH_SOUTH) {
                 railshape = IshRailShape.NORTH_SOUTH;
@@ -378,6 +347,83 @@ public class IshRailState {
             if (flagSE && flagNW && shape == IshRailShape.NE_SW) {
                 railshape = IshRailShape.NE_SW;
             }
+
+            if (!this.disableCorners && !shape.isAscending()) { //
+                if (flagS && !flagN) {
+                    if (shape == IshRailShape.NE_SW && !flagSW) {
+                        railshape = IshRailShape.SOUTH_NE;
+                    }
+                    if (shape == IshRailShape.NW_SE && !flagSE) {
+                        railshape = IshRailShape.SOUTH_NW;
+                    }
+                }
+
+                if (flagN && !flagS) {
+                    if (shape == IshRailShape.NW_SE && !flagNW) {
+                        railshape = IshRailShape.NORTH_SE;
+                    }
+                    if (shape == IshRailShape.NE_SW && !flagNE) {
+                        railshape = IshRailShape.NORTH_SW;
+                    }
+                }
+
+
+                if (flagE && !flagW) {
+                    if (shape == IshRailShape.NW_SE && !flagSE) {
+                        railshape = IshRailShape.EAST_NW;
+                    }
+                    if (shape == IshRailShape.NE_SW && !flagNE) {
+                        railshape = IshRailShape.EAST_SW;
+                    }
+                }
+
+                if (flagW && !flagE) {
+                    if (shape == IshRailShape.NE_SW && !flagSW) {
+                        railshape = IshRailShape.WEST_NE;
+                    }
+                    if (shape == IshRailShape.NW_SE && !flagNW) {
+                        railshape = IshRailShape.WEST_SE;
+                    }
+                }
+
+
+                if (flagSE && !flagNW) {
+                    if (shape == IshRailShape.NORTH_SOUTH && !flagS) {
+                        railshape = IshRailShape.NORTH_SE;
+                    }
+                    if (shape == IshRailShape.EAST_WEST && !flagE) {
+                        railshape = IshRailShape.WEST_SE;
+                    }
+                }
+
+                if (flagNW && !flagSE) {
+                    if (shape == IshRailShape.NORTH_SOUTH && !flagN) {
+                        railshape = IshRailShape.SOUTH_NW;
+                    }
+                    if (shape == IshRailShape.EAST_WEST && !flagW) {
+                        railshape = IshRailShape.EAST_NW;
+                    }
+                }
+
+
+                if (flagNE && !flagSW) {
+                    if (shape == IshRailShape.NORTH_SOUTH && !flagN) {
+                        railshape = IshRailShape.SOUTH_NE;
+                    }
+                    if (shape == IshRailShape.EAST_WEST && !flagE) {
+                        railshape = IshRailShape.WEST_NE;
+                    }
+                }
+
+                if (flagSW && !flagNE) {
+                    if (shape == IshRailShape.NORTH_SOUTH && !flagS) {
+                        railshape = IshRailShape.NORTH_SW;
+                    }
+                    if (shape == IshRailShape.EAST_WEST && !flagW) {
+                        railshape = IshRailShape.EAST_SW;
+                    }
+                }
+            }
         }
 
         if (railshape == null) {
@@ -388,19 +434,19 @@ public class IshRailState {
         if (justPlaced || this.world.getBlockState(this.pos) != this.newState) {
             this.world.setBlockState(this.pos, this.newState, 3);
 
-            log.debug("1");
+//            log.debug("1");
             BlockPos[] outlets = getOutlets(this.pos, railshape);
             for(BlockPos outlet: outlets) {
-                log.debug("2");
+//                log.debug("2");
                 IshRailState railstate = createForAdjacent(outlet);
-                log.debug(outlet);
+//                log.debug(outlet);
                 if (railstate != null) {
-                    log.debug("3");
+//                    log.debug("3");
                     List<BlockPos> openConn = railstate.getOpenConnections();
-                    for(BlockPos p: openConn) {log.debug(p.toString());}
+//                    for(BlockPos p: openConn) {log.debug(p.toString());}
                     if (openConn.size() != 0) {
-                        log.debug("found open");
-                        railstate.correctAdjacentShape(this);
+//                        log.debug("found open");
+                        railstate.correctAdjacentShape(this, openConn);
                     }
                 }
             }
@@ -410,111 +456,47 @@ public class IshRailState {
     }
 
 
-    public void correctAdjacentShape(IshRailState centralState) {
-        IshRailShape shape = this.getShape();
-        List<BlockPos> connections = getActualConnections();
-        List<BlockPos> laterConnections;
-        BlockPos blockposN  = this.pos.north();
-        BlockPos blockposNE = this.pos.north().east();
-        BlockPos blockposE  = this.pos.east();
-        BlockPos blockposSE = this.pos.south().east();
-        BlockPos blockposS  = this.pos.south();
-        BlockPos blockposSW = this.pos.south().west();
-        BlockPos blockposW  = this.pos.west();
-        BlockPos blockposNW = this.pos.north().west();
-        boolean flagN  = this.pointsAtMe(blockposN);
-        boolean flagNE = this.pointsAtMe(blockposNE);
-        boolean flagE  = this.pointsAtMe(blockposE);
-        boolean flagSE = this.pointsAtMe(blockposSE);
-        boolean flagS  = this.pointsAtMe(blockposS);
-        boolean flagSW = this.pointsAtMe(blockposSW);
-        boolean flagW  = this.pointsAtMe(blockposW);
-        boolean flagNW = this.pointsAtMe(blockposNW);
+    public void addAndCheckAngle(Dir dominant, HashSet<Dir> set) {
+        log.debug("a");
+        ;
+//        HashSet<Dir> set2 = ;
+        for (Dir d: getOutletDirections()){
+            int result = abs(dominant.index - d.index) % 4;
+            log.debug(result);
+            if (result > 2) {
+                log.debug(d);
+                set.add(d);
+                break;
+            }
+        }
+        set.add(dominant);
+    }
+
+
+    public void correctAdjacentShape(IshRailState centralState, List<BlockPos> openConn) {
+        log.debug("found sattelite");
+
         IshRailShape railshape = null;
-        if (!this.disableCorners && !shape.isAscending()) { //
-            if (flagS && !flagN) {
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.SOUTH_NE;
-                }
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.SOUTH_NW;
-                }
-            }
+//        log.debug(1);
+        HashSet<Dir> connections = getActualConnections();
+//        log.debug(2);
+        connections.add(directionTo(centralState));
 
-            if (flagN && !flagS) {
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.NORTH_SE;
-                }
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.NORTH_SW;
-                }
-            }
+//        log.debug(3);
+
+        railshape = IshRailShape.formShape(connections);
+
+//        log.debug(4);
 
 
-            if (flagE && !flagW) {
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.EAST_NW;
-                }
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.EAST_SW;
-                }
-            }
 
-            if (flagW && !flagE) {
-                if (shape == IshRailShape.NE_SW) {
-                    railshape = IshRailShape.WEST_NE;
-                }
-                if (shape == IshRailShape.NW_SE) {
-                    railshape = IshRailShape.WEST_SE;
-                }
-            }
-
-
-            if (flagSE && !flagNW) {
-                if (shape == IshRailShape.NORTH_SOUTH) {
-                    railshape = IshRailShape.NORTH_SE;
-                }
-                if (shape == IshRailShape.EAST_WEST) {
-                    railshape = IshRailShape.WEST_SE;
-                }
-            }
-
-            if (flagNW && !flagSE) {
-                if (shape == IshRailShape.NORTH_SOUTH) {
-                    railshape = IshRailShape.SOUTH_NW;
-                }
-                if (shape == IshRailShape.EAST_WEST) {
-                    railshape = IshRailShape.EAST_NW;
-                }
-            }
-
-
-            if (flagNE && !flagSW) {
-                if (shape == IshRailShape.NORTH_SOUTH) {
-                    railshape = IshRailShape.SOUTH_NE;
-                }
-                if (shape == IshRailShape.EAST_WEST) {
-                    railshape = IshRailShape.WEST_NE;
-                }
-            }
-
-            if (flagSW && !flagNE) {
-                if (shape == IshRailShape.NORTH_SOUTH) {
-                    railshape = IshRailShape.NORTH_SW;
-                }
-                if (shape == IshRailShape.EAST_WEST) {
-                    railshape = IshRailShape.EAST_SW;
-                }
-            }
+        log.debug("railshape:");
+        log.debug(railshape);
+        if (railshape == null && connections.size() < 2) {
+            addAndCheckAngle(directionTo(centralState),connections);
+            railshape = IshRailShape.formShape(connections);
         }
-
-
-        if (railshape != null) {
-            if (!getActualConnections(this.pos, railshape).containsAll(connections)) {
-                railshape = this.getShape();
-            }
-        }
-        else{
+        if (railshape == null) {
             railshape = this.getShape();
         }
 
