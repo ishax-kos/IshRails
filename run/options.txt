@@ -31,7 +31,7 @@ graphicsMode:1
 ao:2
 biomeBlendRadius:2
 renderClouds:true
-resourcePacks:["vanilla","mod_resources"]
+resourcePacks:["mod_resources","vanilla"]
 incompatibleResourcePacks:[]
 lastServer:
 lang:en_us
