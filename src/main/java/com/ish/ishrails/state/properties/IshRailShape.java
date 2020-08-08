@@ -1,6 +1,7 @@
 package com.ish.ishrails.state.properties;
 
 import com.ish.ishrails.blocks.Dir;
+import com.ish.ishrails.blocks.IshRailState;
 import net.minecraft.util.IStringSerializable;
 
 import java.util.HashSet;
@@ -35,6 +36,26 @@ public enum IshRailShape implements IStringSerializable {
 
     private IshRailShape(String name) {
         this.name = name;
+    }
+
+
+    public IshRailShape reverse() {
+        switch (this) {
+            case SOUTH_NE: return NORTH_SW;
+            case SOUTH_NW: return NORTH_SE;
+            case NORTH_SE: return SOUTH_NW;
+            case NORTH_SW: return SOUTH_NE;
+            case WEST_NE: return EAST_SW;
+            case WEST_SE: return EAST_NW;
+            case EAST_NW: return WEST_SE;
+            case EAST_SW: return WEST_NE;
+
+            case ASCENDING_EAST: return ASCENDING_WEST;
+            case ASCENDING_WEST: return ASCENDING_EAST;
+            case ASCENDING_SOUTH: return ASCENDING_NORTH;
+            case ASCENDING_NORTH: return ASCENDING_SOUTH;
+            default: return this;
+        }
     }
 
 

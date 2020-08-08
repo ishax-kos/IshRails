@@ -129,7 +129,7 @@ public class IshRailState {
 
     private boolean pointsAt(BlockPos fromPos, BlockPos toPos, IshRailShape shape) {
         try {
-        switch(shape) {
+        switch(shape.reverse()) {
             case NORTH_SOUTH:       return (toPos.equals(fromPos.north())        || toPos.equals(fromPos.south()));
             case EAST_WEST:         return (toPos.equals(fromPos.west())         || toPos.equals(fromPos.east()));
             case NW_SE:             return (toPos.equals(fromPos.north().west()) || toPos.equals(fromPos.south().east()));
@@ -232,15 +232,21 @@ public class IshRailState {
 //            log.debug(1);/
             p = d.fromPos(this.pos);
 //            log.debug(2);
+            log.debug(p);
             IshRailState s = createForAdjacent(p);
 //            log.debug(3);
-            if (s != null && s.pointsAt(this.pos)) {
-//                log.debug(4);
-                connects.add(d);
-//                log.debug(5);
-//                log.debug(d);
-//                log.debug(p);
+            if (s != null) {
+                boolean b = s.pointsAt(this.pos);
+                log.debug(b);
+                if (b) {
+    //                log.debug(4);
+                    connects.add(d);
+    //                log.debug(5);
+    //                log.debug(d);
+    //                log.debug(p);
+                }
             }
+            else log.debug("null");
         }
         return connects;
     }
@@ -461,6 +467,8 @@ public class IshRailState {
         ;
 //        HashSet<Dir> set2 = ;
         for (Dir d: getOutletDirections()){
+            log.debug(dominant);
+            log.debug(d);
             int result = abs(dominant.index - d.index) % 4;
             log.debug(result);
             if (result > 2) {
@@ -492,10 +500,10 @@ public class IshRailState {
 
         log.debug("railshape:");
         log.debug(railshape);
-        if (railshape == null && connections.size() < 2) {
-            addAndCheckAngle(directionTo(centralState),connections);
-            railshape = IshRailShape.formShape(connections);
-        }
+//        if (railshape == null && connections.size() < 2) {
+//            addAndCheckAngle(directionTo(centralState),connections);
+//            railshape = IshRailShape.formShape(connections);
+//        }
         if (railshape == null) {
             railshape = this.getShape();
         }
