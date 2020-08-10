@@ -4,14 +4,9 @@ import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import javax.annotation.Nullable;
 import com.ish.ishrails.state.properties.IshRailShape;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.RailBlock;
-import net.minecraft.block.RailState;
-import net.minecraft.entity.item.minecart.MinecartEntity;
-import net.minecraft.state.properties.RailShape;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -124,12 +119,13 @@ public class IshRailState {
 //        IshRailShape shape = state.newState.get(state.block.getShapeProperty());
 //        return pointsAt(fromPos, toPos, shape);
 //    }
+    private boolean pointsAtReversed(BlockPos toPos) {return pointsAt(this.pos, toPos, this.getShape().reverse());}
     private boolean pointsAt(BlockPos toPos) {return pointsAt(this.pos, toPos, this.getShape());}
     private boolean pointsAt(BlockPos toPos, IshRailShape shape) {return pointsAt(this.pos, toPos, shape);}
 
     private boolean pointsAt(BlockPos fromPos, BlockPos toPos, IshRailShape shape) {
         try {
-        switch(shape.reverse()) {
+        switch(shape) {
             case NORTH_SOUTH:       return (toPos.equals(fromPos.north())        || toPos.equals(fromPos.south()));
             case EAST_WEST:         return (toPos.equals(fromPos.west())         || toPos.equals(fromPos.east()));
             case NW_SE:             return (toPos.equals(fromPos.north().west()) || toPos.equals(fromPos.south().east()));
@@ -190,13 +186,11 @@ public class IshRailState {
 
     private boolean pointsAtMe(BlockPos blockPos) {
         IshRailState state = this.createForAdjacent(blockPos);
-//        log.debug(state);
         if (state == null) {
             return false;
         } else {
             IshRailShape railDirection = state.block.getRailDirection(state.newState, this.world, blockPos, null);
             boolean result = pointsAt(this.pos, blockPos, railDirection);
-//            log.debug(result);
             return result;
         }
     }
@@ -218,10 +212,6 @@ public class IshRailState {
             case WEST_NE:           list = new Dir[]{Dir.NE , Dir.W}; break;
             default: list = new Dir[]{}; break;
         }
-//        log.debug(this.shape);
-//        log.debug("A");
-//        for (Dir i: list) {log.debug(i.index);};
-//        log.debug("B");
         return new HashSet<Dir>(Arrays.asList(list));
     }
         
@@ -229,21 +219,12 @@ public class IshRailState {
         HashSet<Dir> connects = new HashSet<Dir>();
         BlockPos p;
         for (Dir d: this.getOutletDirections()) {
-//            log.debug(1);/
             p = d.fromPos(this.pos);
-//            log.debug(2);
-            log.debug(p);
             IshRailState s = createForAdjacent(p);
-//            log.debug(3);
             if (s != null) {
-                boolean b = s.pointsAt(this.pos);
-                log.debug(b);
+                boolean b = s.pointsAtReversed(this.pos);
                 if (b) {
-    //                log.debug(4);
                     connects.add(d);
-    //                log.debug(5);
-    //                log.debug(d);
-    //                log.debug(p);
                 }
             }
             else log.debug("null");
@@ -263,12 +244,25 @@ public class IshRailState {
 //    }
 
 
-    public List<BlockPos> getOpenConnections() {
-        List<BlockPos> connects = Lists.newArrayList();
-        for (BlockPos p: this.getOutlets()) {
-            IshRailState s = createForAdjacent(p);
-            if (s == null || !createForAdjacent(p).pointsAt(this.pos)) {
-                connects.add(p);
+    public HashSet<Dir> getOpenConnections() {
+        HashSet<Dir> connects = new HashSet<Dir>();
+        for (Dir d: this.getOutletDirections()) {
+            IshRailState other = createForAdjacent(d.fromPos(this.pos));
+            if (other == null) {
+                connects.add(d);
+            } else {
+                log.debug("a");
+                Dir newDir = d.flip();
+                log.debug("b");
+                IshRailShape s = other.shape;
+                log.debug("c");
+                log.debug(s);
+                log.debug(newDir);
+                if (!s.hasDir(newDir)) {
+                    log.debug("d");
+                    connects.add(d);
+                    log.debug("e");
+                }
             }
         }
         return connects;
@@ -448,7 +442,7 @@ public class IshRailState {
 //                log.debug(outlet);
                 if (railstate != null) {
 //                    log.debug("3");
-                    List<BlockPos> openConn = railstate.getOpenConnections();
+                    HashSet<Dir> openConn = railstate.getOpenConnections();
 //                    for(BlockPos p: openConn) {log.debug(p.toString());}
                     if (openConn.size() != 0) {
 //                        log.debug("found open");
@@ -461,41 +455,42 @@ public class IshRailState {
     return this;
     }
 
-
-    public void addAndCheckAngle(Dir dominant, HashSet<Dir> set) {
-        log.debug("a");
-        ;
-//        HashSet<Dir> set2 = ;
-        for (Dir d: getOutletDirections()){
-            log.debug(dominant);
-            log.debug(d);
-            int result = abs(dominant.index - d.index) % 4;
-            log.debug(result);
-            if (result > 2) {
-                log.debug(d);
-                set.add(d);
-                break;
+    public void addAndCheckAngle(Dir newDir, HashSet<Dir> set) {addAndCheckAngle(newDir, set, true);}
+    public void addAndCheckAngle(Dir newDir, HashSet<Dir> set, boolean isDominant) {
+        for (Dir incumbant: (HashSet<Dir>) set.clone()){
+            log.debug("A");
+            int distance = abs(incumbant.angleDiff(newDir));
+            log.debug("B");
+            if (distance <= 2) {
+                if (isDominant) {
+                    log.debug("C.1");
+                    set.remove(incumbant); // if there are conflicts, remove them.
+                } else {
+                    log.debug("C.2");
+                    return; // if there are conflicts, quit.
+                }
             }
         }
-        set.add(dominant);
+        log.debug("D");
+        set.add(newDir);
+        log.debug("E");
     }
 
 
-    public void correctAdjacentShape(IshRailState centralState, List<BlockPos> openConn) {
+    public void correctAdjacentShape(IshRailState centralState, HashSet<Dir> openConn) {
         log.debug("found sattelite");
 
         IshRailShape railshape = null;
-//        log.debug(1);
-        HashSet<Dir> connections = getActualConnections();
-//        log.debug(2);
-        connections.add(directionTo(centralState));
-
-//        log.debug(3);
-
+        HashSet<Dir> connections = getOpenConnections();
+        log.debug(connections);
+        addAndCheckAngle(directionTo(centralState), connections);
+        log.debug(connections);
+        for (Dir d: getActualConnections()) {
+            addAndCheckAngle(d, connections);
+        }
         railshape = IshRailShape.formShape(connections);
 
-//        log.debug(4);
-
+        log.debug(connections);
 
 
         log.debug("railshape:");

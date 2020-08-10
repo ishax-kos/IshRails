@@ -67,36 +67,21 @@ public enum IshRailShape implements IStringSerializable {
         return this == ASCENDING_NORTH || this == ASCENDING_EAST || this == ASCENDING_SOUTH || this == ASCENDING_WEST;
     }
 
-    public boolean hasNorth() {
-        return this == NORTH_SOUTH || this == NORTH_SE || this == NORTH_SW || this == ASCENDING_SOUTH;
-    }
-
-    public boolean hasNE() {
-        return this == NE_SW || this == WEST_NE || this == SOUTH_NE;
-    }
-
-    public boolean hasEast() {
-        return this == EAST_WEST || this == EAST_NW || this == EAST_SW || this == ASCENDING_WEST;
-    }
-
-    public boolean hasSE() {
-        return this == NW_SE || this == WEST_SE || this == NORTH_SE;
-    }
-
-    public boolean hasSouth() {
-        return this == NORTH_SOUTH || this == SOUTH_NE || this == SOUTH_NW || this == ASCENDING_NORTH;
-    }
-
-    public boolean hasSW() {
-        return this == NE_SW || this == EAST_SW || this == NORTH_SW;
-    }
-
-    public boolean hasWest() {
-        return this == EAST_WEST || this == WEST_NE || this == WEST_SE || this == ASCENDING_EAST;
-    }
-
-    public boolean hasNW() {
-        return this == NW_SE || this == EAST_NW || this == SOUTH_NW;
+//    public boolean hasDir(int index) {
+////        return hasDir(Dir.fromIndex(index));
+////    }
+    public boolean hasDir(Dir direction) {
+        switch (direction) {
+            case N: return this == NORTH_SOUTH || this == NORTH_SE || this == NORTH_SW || this == ASCENDING_SOUTH;
+            case NE:return this == NE_SW || this == WEST_NE || this == SOUTH_NE;
+            case E: return this == EAST_WEST || this == EAST_NW || this == EAST_SW || this == ASCENDING_WEST;
+            case SE:return this == NW_SE || this == WEST_SE || this == NORTH_SE;
+            case S: return this == NORTH_SOUTH || this == SOUTH_NE || this == SOUTH_NW || this == ASCENDING_NORTH;
+            case SW:return this == NE_SW || this == EAST_SW || this == NORTH_SW;
+            case W: return this == EAST_WEST || this == WEST_NE || this == WEST_SE || this == ASCENDING_EAST;
+            case NW:return this == NW_SE || this == EAST_NW || this == SOUTH_NW;
+            default: return false;
+        }
     }
 
     public static IshRailShape formShape(HashSet<Dir> directions) {
