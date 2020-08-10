@@ -227,7 +227,7 @@ public class IshRailState {
                     connects.add(d);
                 }
             }
-            else log.debug("null");
+//            else //log.debug("null");
         }
         return connects;
     }
@@ -251,17 +251,17 @@ public class IshRailState {
             if (other == null) {
                 connects.add(d);
             } else {
-                log.debug("a");
+                //log.debug("a");
                 Dir newDir = d.flip();
-                log.debug("b");
+                //log.debug("b");
                 IshRailShape s = other.shape;
-                log.debug("c");
-                log.debug(s);
-                log.debug(newDir);
+                //log.debug("c");
+                //log.debug(s);
+                //log.debug(newDir);
                 if (!s.hasDir(newDir)) {
-                    log.debug("d");
+                    //log.debug("d");
                     connects.add(d);
-                    log.debug("e");
+                    //log.debug("e");
                 }
             }
         }
@@ -451,50 +451,50 @@ public class IshRailState {
                 }
             }
         }
-    log.debug("");
+    //log.debug("");
     return this;
     }
 
     public void addAndCheckAngle(Dir newDir, HashSet<Dir> set) {addAndCheckAngle(newDir, set, true);}
     public void addAndCheckAngle(Dir newDir, HashSet<Dir> set, boolean isDominant) {
         for (Dir incumbant: (HashSet<Dir>) set.clone()){
-            log.debug("A");
+            //log.debug("A");
             int distance = abs(incumbant.angleDiff(newDir));
-            log.debug("B");
+            //log.debug("B");
             if (distance <= 2) {
                 if (isDominant) {
-                    log.debug("C.1");
+                    //log.debug("C.1");
                     set.remove(incumbant); // if there are conflicts, remove them.
                 } else {
-                    log.debug("C.2");
+                    //log.debug("C.2");
                     return; // if there are conflicts, quit.
                 }
             }
         }
-        log.debug("D");
+        //log.debug("D");
         set.add(newDir);
-        log.debug("E");
+        //log.debug("E");
     }
 
 
     public void correctAdjacentShape(IshRailState centralState, HashSet<Dir> openConn) {
-        log.debug("found sattelite");
+        //log.debug("found sattelite");
 
         IshRailShape railshape = null;
         HashSet<Dir> connections = getOpenConnections();
-        log.debug(connections);
+        //log.debug(connections);
         addAndCheckAngle(directionTo(centralState), connections);
-        log.debug(connections);
+        //log.debug(connections);
         for (Dir d: getActualConnections()) {
             addAndCheckAngle(d, connections);
         }
         railshape = IshRailShape.formShape(connections);
 
-        log.debug(connections);
+        //log.debug(connections);
 
 
-        log.debug("railshape:");
-        log.debug(railshape);
+        //log.debug("railshape:");
+        //log.debug(railshape);
 //        if (railshape == null && connections.size() < 2) {
 //            addAndCheckAngle(directionTo(centralState),connections);
 //            railshape = IshRailShape.formShape(connections);

@@ -9,9 +9,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorldReader;
-import net.minecraft.world.World;
+import net.minecraft.world.*;
 
 import static com.ish.ishrails.IshRails.log;
 import static java.lang.StrictMath.floor;
@@ -142,36 +140,21 @@ public abstract class AbstractIshRailBlock extends Block implements IAbstractIsh
 //        BlockState blockstate = super.getDefaultState();
         IshRailShape shape = IshRailShape.ASCENDING_SOUTH;
         int side = context.getFace().getIndex();
-//        BlockState below = context.getWorld().getBlockState(context.getPos().down());
-//        if (below.equals(Registry.ISH_RAIL) && side == 1) {
-//            IshRailShape shape = getRailDirection(below,context.getWorld(),context.getPos().down(),null);
-//            if (shape != null) {
-//                if (shape.isDiagonal()) {
-//                    context.getWorld().setBlockState(
-//                            context.getPos().down(),
-//                            blockstate.with(this.getShapeProperty(), IshRailShape.CROSSING_DIAGONAL)
-//                    );
-//                }
-//                else {
-//                    context.getWorld().setBlockState(
-//                            context.getPos().down(),
-//                            blockstate.with(this.getShapeProperty(), IshRailShape.CROSSING)
-//                    );
-//                }
-//            }
-//            return null;
-//        }
-//        BlockState on = context.getWorld().getBlockState(context.getPos());
-//        on.isSolid() &&
-        if (side >= 2) {
-            switch (side) {
-                case 2: shape = IshRailShape.ASCENDING_SOUTH; break;
-                case 3: shape = IshRailShape.ASCENDING_NORTH; break;
-                case 4: shape = IshRailShape.ASCENDING_EAST; break;
-                case 5: shape = IshRailShape.ASCENDING_WEST; break;
+        World world = context.getWorld();
+        BlockPos pos = context.getPos().offset(context.getFace(),-1);
+        ;
+        breakTo:{
+            if (side >= 2) {
+                if (world.getBlockState(pos).isSolidSide(EmptyBlockReader.INSTANCE, pos, context.getFace())) {
+                    switch (side) {
+                        case 2: shape = IshRailShape.ASCENDING_SOUTH; break;
+                        case 3: shape = IshRailShape.ASCENDING_NORTH; break;
+                        case 4: shape = IshRailShape.ASCENDING_EAST; break;
+                        case 5: shape = IshRailShape.ASCENDING_WEST; break;
+                    }
+                    break breakTo;
+                }
             }
-        }
-        else {
             int direction = (int) floor((context.getPlacementYaw() + 22.5f) / 45.0f);
             switch (direction & 3) {
                 case 0: shape = IshRailShape.NORTH_SOUTH; break;
